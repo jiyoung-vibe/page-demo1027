@@ -124,3 +124,21 @@ button {
 #guestbook-list li + li {
   margin-top: 12px;
 }
+
+/* 내가 만든 것: 카드 어디를 눌러도 링크가 열리게 */
+section:nth-of-type(2) {
+  position: relative;
+}
+
+section:nth-of-type(2) a {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+section:nth-of-type(2) a::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
