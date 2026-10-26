@@ -142,3 +142,41 @@ section:nth-of-type(2) a::after {
   inset: 0;
   border-radius: inherit;
 }
+
+/* 사진 카드 */
+section:nth-of-type(4) {
+  margin-top: 24px;
+}
+
+input[type="file"] {
+  border-radius: 24px;
+  font-size: 0.9rem;
+}
+
+#photo-notice {
+  margin-top: 12px;
+  color: #b3261e;
+}
+
+#photo-notice:empty {
+  display: none;
+}
+
+#gallery {
+  margin-top: 16px;
+}
+
+#gallery img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+#gallery:has(img) {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}

@@ -93,3 +93,95 @@ async function addEntry() {
 
 submitButton.addEventListener("click", addEntry);
 loadEntries();
+
+// ---- 사진 올리기와 갤러리 ----
+const STORAGE_URL = SUPABASE_URL + "/storage/v1/object";
+const MAX_PHOTO_SIZE = 5 * 1024 * 1024; // 5MB
+const PHOTO_TYPES = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
+
+const photoInput = document.getElementById("photo-input");
+const photoButton = document.getElementById("photo-button");
+const photoNotice = document.getElementById("photo-notice");
+const gallery = document.getElementById("gallery");
+
+// 영어·숫자로만 된 새 파일 이름을 만듭니다. (예: 1767225600000-a1b2c3.jpg)
+function makePhotoName(extension) {
+  const random = Math.random().toString(36).slice(2, 8).padEnd(6, "0");
+  return Date.now() + "-" + random + "." + extension;
+}
+
+// 올린 사진을 최신순으로 불러와 갤러리에 보여 줍니다.
+async function loadPhotos() {
+  try {
+    const response = await fetch(STORAGE_URL + "/list/photos", {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify({
+        prefix: "",
+        limit: 100,
+        sortBy: { column: "created_at", order: "desc" }
+      })
+    });
+    if (!response.ok) {
+      throw new Error("status " + response.status);
+    }
+    const files = (await response.json()).filter(function (file) {
+      return file.name !== ".emptyFolderPlaceholder";
+    });
+    gallery.textContent = "";
+    if (files.length === 0) {
+      gallery.textContent = "아직 사진이 없어요.";
+      return;
+    }
+    files.forEach(function (file) {
+      const img = document.createElement("img");
+      img.src = STORAGE_URL + "/public/photos/" + encodeURIComponent(file.name);
+      img.alt = "올린 사진";
+      img.loading = "lazy";
+      gallery.appendChild(img);
+    });
+  } catch (error) {
+    gallery.textContent = "사진을 불러오지 못했어요.";
+  }
+}
+
+// 올리기를 누르면 검사하고, 통과한 사진을 보관함에 올립니다.
+async function uploadPhoto() {
+  const file = photoInput.files[0];
+  photoNotice.textContent = "";
+
+  if (!file) {
+    photoNotice.textContent = "사진을 먼저 골라 주세요.";
+    return;
+  }
+  const extension = PHOTO_TYPES[file.type];
+  if (!extension) {
+    photoNotice.textContent = "사진 파일(jpg, png, webp)만 올릴 수 있어요.";
+    return;
+  }
+  if (file.size > MAX_PHOTO_SIZE) {
+    photoNotice.textContent = "사진은 5MB까지만 올릴 수 있어요.";
+    return;
+  }
+
+  photoButton.disabled = true;
+  try {
+    const response = await fetch(STORAGE_URL + "/photos/" + makePhotoName(extension), {
+      method: "POST",
+      headers: Object.assign({}, headers, { "Content-Type": file.type }),
+      body: file
+    });
+    if (!response.ok) {
+      throw new Error("status " + response.status);
+    }
+    photoInput.value = "";
+    await loadPhotos();
+  } catch (error) {
+    photoNotice.textContent = "사진을 올리지 못했어요. 잠시 뒤에 다시 해 보세요.";
+  } finally {
+    photoButton.disabled = false;
+  }
+}
+
+photoButton.addEventListener("click", uploadPhoto);
+loadPhotos();
